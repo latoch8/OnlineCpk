@@ -8,7 +8,9 @@ logsDir = "../*."+logsFormat
 tempLogsDir = "temp/"
 howManyDut = 2
 delimiter = ";"
+iniDelimiter = delimiter
 testNameINI = "testsToPlot.txt"
+    
 
 def prepareData():
     #check and create folder
@@ -36,9 +38,16 @@ def loadData():
         open(testNameINI, 'a').close()
         print("Please fill ini file!")
     with open(testNameINI) as ini:
-        testNameToPlote = ini.read().splitlines()   
-        for testName in testNameToPlote:
-            AllData.update({testName:[]})
+        allLine = ini.read().splitlines() 
+        for oneLine in allLine:
+            data = oneLine.split(iniDelimiter)
+            name = data[0]
+            limits = []
+            try:
+                limits = [float(data[1]), float(data[2])]
+            except:
+                print("Lack of limits for: ", name)
+            AllData.update({name:{"data":[], "limits":limits}})
     #load data
     filesList = os.listdir(tempLogsDir)
     print(filesList)
@@ -52,7 +61,7 @@ def loadData():
                 for oneColumn in allColumns:
                     for key in AllData:
                         if key == oneColumn: #if key is equal to test name asign next value
-                            AllData[key].append(float(allColumns[index+1]))
+                            AllData[key]["data"].append(float(allColumns[index+1]))
                             # print(allColumns[index+1])
                     index += 1
         os.remove(fileDir)
@@ -66,16 +75,25 @@ def plotAllData(data):
     index = 0
     fig, plot= plt.subplots(nrows=row, ncols=col)
     for key in data:
-        a = data[key]
+        print(key)
+        a = data[key]["data"]
+        limits = data[key]["limits"]
         lenght = len(set(a))
         plot[index].name = key
         plot[index].hist(a, bins = lenght)
+        #linie pionowe
+        plot[index].vlines(limits,0,1,transform=plot[index].get_xaxis_transform(), colors='r')
+        #nazwy dla osi
+        plot[index].set_title(key)
         index += 1
+    mng = plt.get_current_fig_manager()
+    mng.full_screen_toggle()
     plt.show()
 
 #MAIN
-prepareData()
-dataToPlot = loadData()
-plotAllData(dataToPlot)
-
+prepareData() #prepare file
+dataToPlot = loadData() #load data from file and ini
+#print(dataToPlot)
+# ani = animation.FuncAnimation(fig, animate, interval=1000)
+plotAllData(dataToPlot) #plot data
 # input("Press Enter...")
